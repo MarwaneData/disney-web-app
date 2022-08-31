@@ -1,13 +1,75 @@
-import React from 'react'
+import React, { useEffect } from 'react'
+import {useDispatch, useSelector} from "react-redux";
+import {useNavigate } from "react-router-dom";
 import styled from 'styled-components';
+import { auth, provider } from '../firebase';
+import {
+  selectUserName,
+  selectUserPhoto,
+  setUserLoginDetails,
+  setSignOutState,
+} from "../features/user/userSlice";
+
+
+
 const Header = (props)=> {
+  const dispatch = useDispatch()
+  const history = useNavigate()
+  const userName = useSelector(selectUserName)
+  const userPhoto = useSelector(selectUserPhoto)
+  useEffect(() => {
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        setUser(user);
+        history("/home");
+      }
+    });
+  }, [userName]);
+
+   const handleAuth = () => {
+    if (!userName) {
+      auth
+        .signInWithPopup(provider)
+        .then((result) => {
+          setUser(result.user);
+        })
+        .catch((error) => {
+          alert(error.message);
+        });
+    } else if (userName) {
+      auth
+        .signOut()
+        .then(() => {
+          dispatch(setSignOutState());
+          history("/");
+        })
+        .catch((err) => alert(err.message));
+    }
+  };
+ const setUser = (user) => {
+    dispatch(
+      setUserLoginDetails({
+        name: user.displayName,
+        email: user.email,
+        photo: user.photoURL,
+      })
+    );
+  };
+
+
+
   return (
     <Nav>
-        <Logo>
-          <img src="/images/logo.svg" alt="Disney+" />
-        </Logo>
-        <NavMenu>
-        <a href="/home">
+      <Logo>
+        <img src="/images/logo.svg" alt="Disney+" />
+      </Logo>
+
+      {!userName ? (
+        <Login onClick={handleAuth}>Login</Login>
+      ) : (
+        <>
+          <NavMenu>
+            <a href="/home">
               <img src="/images/home-icon.svg" alt="HOME" />
               <span>HOME</span>
             </a>
@@ -31,8 +93,15 @@ const Header = (props)=> {
               <img src="/images/series-icon.svg" alt="SERIES" />
               <span>SERIES</span>
             </a>
-        </NavMenu>
-        <Login>Login</Login>
+          </NavMenu>
+          <SignOut>
+            <h1> {userName} </h1>
+            <DropDown>
+              <span onClick={handleAuth}>Sign out</span>
+            </DropDown>
+          </SignOut>
+        </>
+      )}
     </Nav>
   )
 }
@@ -61,6 +130,7 @@ const Logo = styled.a`
   max-height: 70px;
   font-size: 0;
   display: inline-block;
+  cursor:pointer;
   img {
     display: block;
     width: 100%;
@@ -162,25 +232,24 @@ const DropDown = styled.div`
   opacity: 0;
 `;
 
-// const SignOut = styled.div`
-//   position: relative;
-//   height: 48px;
-//   width: 48px;
-//   display: flex;
-//   cursor: pointer;
-//   align-items: center;
-//   justify-content: center;
-//   ${UserImg} {
-//     border-radius: 50%;
-//     width: 100%;
-//     height: 100%;
-//   }
-//   &:hover {
-//     ${DropDown} {
-//       opacity: 1;
-//       transition-duration: 1s;
-//     }
-//   }
-// `;
+const SignOut = styled.div`
+  position: relative;
+  height: 48px;
+  width: 48px;
+  display: flex;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  h1{
+    font-size:14px;
+    letter-spacing:1px;
+  }
+  &:hover {
+    ${DropDown} {
+      opacity: 1;
+      transition-duration: 1s;
+    }
+  }
+`;
 
 export default Header

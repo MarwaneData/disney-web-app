@@ -12,7 +12,7 @@ const Login = (props) => {
                 </Description>
                 <CTALogoTwo src='/images/cta-logo-two.png'/>
             </CTA>
-            <BgImage />
+            <BgImage  />
              
         </Content>
     </Container>
